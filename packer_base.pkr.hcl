@@ -51,6 +51,8 @@ build {
     provisioner "ansible" {
         playbook_file = "./kube_base.yml"
         user = var.sshcreds
+
+        # Ubuntu 22.04 won't accept rsa keys by default any longer but provisioner still uses them
         ansible_env_vars = [
             "ANSIBLE_SSH_ARGS='-oHostKeyAlgorithms=+ssh-rsa -oPubkeyAcceptedKeyTypes=ssh-rsa'",
             "ANSIBLE_HOST_KEY_CHECKING=False"

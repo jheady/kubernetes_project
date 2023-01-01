@@ -13,7 +13,7 @@ autoinstall:
         install-server: yes
         allow-pw: yes
         authorized-keys:
-            - ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgQCShfrJvewQbRdPSZuwucXIDgcATCOhIiDrWRz2SKLjFa2wkrW4FuNn88FeEUlLF30YdvZOmK5dACBFNuNHpW40kNAw79sLHCjyG+t58i2ud8F8qhguO6ZvZYkxcBgez3QUH+DCGkTIlT8zIVuTUvg2y1xTm761gcwZ9UCML/Twz5lQwCZ7LXQA08h/y2+qchQW4Z5DLseSGO0DGKZczbxfd+xbjyJeOTP0xVRN+CJeb+RoudMLOpyIZL5/S/0L+zslv5PWYUvzFM90p8RCXyU4CQ03/qjhtKvaVOFYSed3OA18UR6Ho7bTcWTTEAzbZQ36QzifDyJhOfFsujskFrT8wwL6lbiKFea0jCOIPlX+Ky1DVQjdmABbM6C+YYh679ucp//bJqXBjrr8gtHeLwtgqOTbcAo0O824kckwiwWgWIwnWWe7t4qb1wxeta4Ets6x2Pfyg3oIfNGa26z41sL9K4DhHuCo+KHwj2ci1o+QLhtG0FViWO/4UkSAGn62izc= ansible
+            - ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIE1XrMWaemM9L2KLh+Z4Zs8M3UcYJWGzIG76vqpHxwqv ansible
     packages:
         - gcc
         - build-essential
