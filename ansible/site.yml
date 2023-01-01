@@ -1,0 +1,34 @@
+---
+- name: Install Kubernetes cluster
+  vars_files:
+    - tf_ansible_vars_file.yml
+  hosts: localhost
+
+  tasks:
+  - name: Add worker nodes
+    ansible.builtin.add_host:
+      name: "{{ item }}"
+      groups: worker_nodes
+    loop: "{{ tf_worker_ips }}"
+    changed_when: False
+
+  - name: Add master node(s)
+    ansible.builtin.add_host:
+      name: "{{ item }}"
+      groups: master_nodes
+    loop: "{{ tf_master_ips}}"
+    change_when: false
+
+- name: Setup the master node(s)
+  remote_user: ansible
+  hosts: master_nodes
+  become: yes
+  roles:
+    - master
+
+- name: Join worker nodes to the cluster
+  remote_user: ansible
+  hosts: worker_nodes
+  become: yes
+  roles:
+    - worker

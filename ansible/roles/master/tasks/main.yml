@@ -1,0 +1,68 @@
+---
+  - name: Include the variable from the vars file
+    ansible.builtin.include_vars:
+      file: ../../tf_ansible_vars_file.yml
+  
+  - name: Set the hostname for the server(s)
+    ansible.builtin.hostname:
+      name: "kube-master-node-{{ node_count+1 }}"
+    loop: "{{ tf_master_ips }}"
+    loop_control:
+      index_var: node_count
+    register: node_name
+
+  - name: Check if Kubernetes is already running
+    ansible.builtin.shell:
+      cmd: ps auwx | grpe ^kube
+    failed_when: false
+    register: kubernetes_process_status
+    change_when: kubernetes_process_status rc != 0
+
+  - name: Initalize the Kubernetes cluster with kubeadm on the primary master node
+    ansible.built.command:
+      cmd: "kubeadm init --control-plane-endpoint={{ item.name[0] }}:6443 --pod-network-cide=192.168.122.0/24"
+    when: kubernetes_process_status.changed
+    loop: "{{ node_name.results }}"
+
+  - name: Setup kubeconfig for ansible user
+    ansible.builtin.command:
+      cmd: "{{ item }}"
+    with_items:
+      - mkdir -p /home/ansible/.kube
+      - cp -i /etc/kubernetes/admin.conf /home/ansible/.kube/config
+      - chown ansible:ansible /home/ansible/.kube/config
+    when: kubernetes_process_status.changed
+
+  # Begin calico pod network manifest installation
+  - name: Download calic pod network manifest
+    ansible.builtin.get_url:
+      url: https://projectcalico.docs.tigera.io/manifests/calico.yaml
+      dest: /opt/ansible/calico.yaml
+    register: calico_yaml_downloaded
+
+  - name: Modify calico manifest for pod network configuration
+    ansible.builtin.lineinfile:
+      path: /opt/ansible/calico.yaml
+      regexp: "{{ item.regexp }}"
+      line: "{{ item.line }}"
+      backrefs: yes
+    loop:
+      - { regexp: '( +)# (- name: CALICO_IPV4POOL_CIDR)', line: '\1\2' }
+      - { regexp: '( +)# (  value: )"192.168.0.0/16"', line: '\1\2"192.168.122.0/24"' }
+
+  - name: Apply calico pod network manifest
+    become: no
+    ansible.builtin.command:
+      cmd: kubectl apply -f /opt/ansible/calico.yaml
+    when: calico_yaml_download.changed
+  # End calico pod network manifest installation
+
+  - name: Generate join command for worker nodes
+    ansible.builtin.command:
+      cmd: kubeadm token create --print-join-command
+    register: join_command_output
+
+  - name: Capture join command
+    ansible.builtin.set_fact:
+      kubeadm_join_command: "{{ join_command_output.stdout }}"
+      cacheable: yes

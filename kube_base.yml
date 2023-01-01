@@ -1,0 +1,193 @@
+---
+- name: Setup the base image for kubernetes configurations that exist on all nodes
+  hosts: default
+  become: yes
+
+  tasks:
+    - name: Enable ttyS0 so virsh console can connect
+      ansible.builtin.service:
+        name: serial-getty@ttyS0.service
+        enabled: yes
+        state: started
+    
+    - name: Create the necessary directories for the install
+      ansible.builtin.file:
+        path: "{{ item }}"
+        state: directory
+      loop:
+        - /opt/ansible
+        - /usr/local/lib/systemd/system
+        - /opt/cni/bin
+        - /etc/containerd
+
+    - name: Check if necessary modules are present
+      ansible.builtin.shell:
+        cmd: "lsmod | grep {{ item }}"
+      failed_when: False
+      register: module_output
+      loop:
+        - overlay
+        - br_netfilter
+      changed_when: module_output.rc != 0
+    
+    - name: Add netfilter modules to modules-load.d
+      ansible.builtin.blockinfile:
+        block: |
+          overlay
+          br_netfilter
+        path: /etc/modules-load.d/k8s.conf
+        create: yes
+    
+    - name: Add iptables rules to sysctl
+      ansible.builtin.blockinfile:
+        block: |
+          net.bridge.bridge-nf-call-iptables = 1
+          net.bridge.bridge-ng-call-ip6tables = 1
+          net.ipv4.ip_forward = 1
+        path: /etc/sysctl.d/k8s.conf
+        create: yes
+      notify:
+      - apply sysctl
+
+    # Containerd installation
+    - name: Download containerd sha256sum
+      ansible.builtin.get_url:
+        url: https://github.com/containerd/containerd/releases/download/v1.6.14/containerd-1.6.14-linux-amd64.tar.gz.sha256sum
+        dest: /opt/ansible/containerd-1.6.14-linux-amd64.tar.gz.sha256sum
+    
+    -name: Download containerd archive
+      ansible.builtin.get_url:
+        url: https://github.com/containerd/containerd/releases/download/v1.6.14/containerd-1.6.14-linux-amd64.tar.gz
+        dest: /opt/ansible/containerd-1.6.14-linux-amd64.tar.gz
+    
+    - name: Compare sha256sum of containerd archive
+      ansible.builtin.shell:
+        cmd: sha256sum -c containerd-1.6.14-linux-amd64.tar.gz.sha256sum
+        chdir: /opt/ansible
+      change_when: False
+
+    - name: Extract containerd
+      ansible.builtin.unarchive:
+        creates: /usr/local/bin/containerd
+        src: /opt/ansible/containerd-1.6.14-linux-amd64.tar.gz
+        dest: /usr/local
+        remote_src: yes
+
+    - name: Download containerd systemd service file
+      ansible.builtin.get_url:
+        url: https://raw.githubusercontent.com/containerd/containerd/main/containerd.service
+        dest: /usr/local/lib/systemd/system/containerd.service
+      register: containerd_service
+    
+    - name: Reload systemd daemon
+      ansible.builtin.command:
+        cmd: systemctl daemon-reload
+      when: containerd_service.changed
+    
+    # runc installation
+    - name: Download runc sha256sum
+      ansible.builtin.get_url:
+        url: https://github.com/opencontainers/runc/releases/download/v1.1.4/runc.sha256sum
+        dest: /opt/ansible/runc.sha256sum
+      
+    - name: Download runc archive
+      ansible.builtin.get_url:
+        url: https://github.com/opencontainers/runc/releases/download/v1.1.4/runc.amd64
+        dest: /opt/ansible/runc.amd64
+      
+    - name: Compare sha256sum of runc
+      ansible.builtin.shell:
+        cmd: sha256sum -c runc.sha256sum 2>/dev/null | head -1
+        chdir: /opt/ansible
+      change_when: False
+    
+    - name: Install runc
+      ansible.builtin.command:
+        chdir: /opt/ansible
+        cmd: install -m 755 runc.amd64 /usr/local/sbin/runc
+        creates: /usr/local/sbin/runc
+    
+    # CNI Plugin installation
+    - name: Download CNI plugin sha256sum
+      ansible.builtin.get_url:
+        url: https://github.com/containernetworking/plugins/releases/download/v1.1.1/cni-plugins-linux-amd64-v1.1.1.tgz.sha256
+        dest: /opt/ansible/cni-plugins-linux-amd64-v1.1.1.tgz.sha256
+    
+    - name: Download CNI plugin archive
+      ansible.builtin.get_url:
+        url: https://github.com/containernetworking/plugins/releases/download/v1.1.1/cni-plugins-linux-amd64-v1.1.1.tgz
+        dest: /opt/ansible/cni-plugins-linux-amd64-v1.1.1.tgz
+
+    - name: Compare sha256sum of CNI plugin
+      ansible.builtin.shell:
+        cmd: sha256sum -c cni-plugins-linux-amd64-v1.1.1.tgz.sha256
+        chdir: /opt/ansible
+      change_when: False
+    
+    - name: Extract CNI plugin
+      ansible.builtin.unarchive:
+        creates: /opt/cni/bin/static
+        src: /opt/ansible/cni-plugins-linux-amd64-v1.1.1.tgz
+        dest: /opt/cni/bin
+        remote_src: yes
+    
+    # Containerd configuration and service restart
+    - name: Generate default containerd configuration
+      ansible.builtin.shell:
+        cmd: containerd config default > /etc/containerd/config.toml
+        creates: /etc/containerd/config.toml
+
+    - name: Configure containerd to use systemd cgroup driver
+      ansible.builtin.lineinfile:
+        path: /etc/containerd/config.toml
+        regexp: ( +SystemdCgroup = )false
+        line: '\1true'
+        backrefs: yes
+      notify:
+        - reload containerd service
+      
+    # Steps to install kubeadm, kubectl, kubelet
+    - name: Install kubernetes needed packages
+      ansible.builtin.apt:
+        name:
+          - apt-transport-https
+          - ca-certificates
+          - curl
+        cache_valid_time: 600
+    
+    - name: Download google cloud public signing key
+      ansible.builtin.get_url:
+        url: https://packages.cloud.google.com/apt/doc/apt-key.gpg
+        dest: /usr/share/keyrings/kubernetes-archive-keyring.gpg
+
+    - name: Add Kubernetes repository
+      ansible.builtin.apt_repository:
+        repo: deb [signed-by=/usr/share/keyrings/kubernetes-archive-keyring.gpg] https://apt.kubernetes.io kubernetes-xenial main
+        filename: kubernetes.list
+    
+    - name: Install kubeadm, kubelet, kubectl
+      ansible.builtin.apt:
+        name:
+          - kubelet
+          - kubeadm
+          - kubectl
+        update_cache: yes
+    
+    - name: Prevent kubeadm, kublet, and kubectl package from being upgraded
+      ansible.builtin.dpkg_selections:
+        name: "{{ item }}"
+        selection: hold
+      loop:
+        - kubelet
+        - kubeadm
+        - kubectl
+    
+    # Handles for service restarts
+    handlers:
+      - name: apply sysctl
+        ansible.builtin.command:
+          cmd: sysctl --system
+      
+      - name: reload containerd service
+        ansible.builtin.command:
+          cmd: systemctl restart containerd

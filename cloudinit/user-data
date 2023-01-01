@@ -1,0 +1,24 @@
+#cloud-config
+autoinstall:
+    version: 1
+    locale: en_US
+    keyboard:
+        layout: en
+        variant: us
+    identity:
+        hostname: kube-base
+        username: ansible
+        password: $5$DplgfrSbBtC5VQ96$K6RlTuFXrLTenhKc8DDOtgrZfHHr07/MYPpCpmd9GX0
+    ssh:
+        install-server: yes
+        allow-pw: yes
+        authorized-keys:
+            - ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgQCShfrJvewQbRdPSZuwucXIDgcATCOhIiDrWRz2SKLjFa2wkrW4FuNn88FeEUlLF30YdvZOmK5dACBFNuNHpW40kNAw79sLHCjyG+t58i2ud8F8qhguO6ZvZYkxcBgez3QUH+DCGkTIlT8zIVuTUvg2y1xTm761gcwZ9UCML/Twz5lQwCZ7LXQA08h/y2+qchQW4Z5DLseSGO0DGKZczbxfd+xbjyJeOTP0xVRN+CJeb+RoudMLOpyIZL5/S/0L+zslv5PWYUvzFM90p8RCXyU4CQ03/qjhtKvaVOFYSed3OA18UR6Ho7bTcWTTEAzbZQ36QzifDyJhOfFsujskFrT8wwL6lbiKFea0jCOIPlX+Ky1DVQjdmABbM6C+YYh679ucp//bJqXBjrr8gtHeLwtgqOTbcAo0O824kckwiwWgWIwnWWe7t4qb1wxeta4Ets6x2Pfyg3oIfNGa26z41sL9K4DhHuCo+KHwj2ci1o+QLhtG0FViWO/4UkSAGn62izc= ansible
+    packages:
+        - gcc
+        - build-essential
+        - net-tools
+        - qemu-guest-agent
+    late-commands:
+        - "echo 'ansible ALL=(ALL) NOPASSWD:ALL' > /target/etc/sudoers.d/ansible"
+        - "chmod 440 /target/etc/sudoers.d/ansible"

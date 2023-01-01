@@ -1,0 +1,21 @@
+---
+
+- name: Include the variables from the vars file
+  ansible.builtin.include_vars:
+    file: ../../tf_ansible_vars_file.yml
+
+- name: Set hostname for the server(s) properly
+  ansible.builtin.hostname:
+    name: "kube-worker-node-{{ node_count }}"
+  loop: "{{ tf_worker_ips }}"
+  loop_control:
+    extended: true
+    index_var: node_count
+
+- name: Retrieve join command
+  ansible.builtin.set_fact:
+    join_command: "{{ hostvars['{{ tf_master_ips[0] }}']['kubeadm_join_command'] }}"
+
+- name: Join node to the cluster
+  ansible.builtin.command:
+    cmd: "{{ join_command }}"
