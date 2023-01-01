@@ -55,7 +55,7 @@
         url: https://github.com/containerd/containerd/releases/download/v1.6.14/containerd-1.6.14-linux-amd64.tar.gz.sha256sum
         dest: /opt/ansible/containerd-1.6.14-linux-amd64.tar.gz.sha256sum
     
-    -name: Download containerd archive
+    - name: Download containerd archive
       ansible.builtin.get_url:
         url: https://github.com/containerd/containerd/releases/download/v1.6.14/containerd-1.6.14-linux-amd64.tar.gz
         dest: /opt/ansible/containerd-1.6.14-linux-amd64.tar.gz
@@ -64,7 +64,7 @@
       ansible.builtin.shell:
         cmd: sha256sum -c containerd-1.6.14-linux-amd64.tar.gz.sha256sum
         chdir: /opt/ansible
-      change_when: False
+      changed_when: False
 
     - name: Extract containerd
       ansible.builtin.unarchive:
@@ -99,7 +99,7 @@
       ansible.builtin.shell:
         cmd: sha256sum -c runc.sha256sum 2>/dev/null | head -1
         chdir: /opt/ansible
-      change_when: False
+      changed_when: False
     
     - name: Install runc
       ansible.builtin.command:
@@ -122,7 +122,7 @@
       ansible.builtin.shell:
         cmd: sha256sum -c cni-plugins-linux-amd64-v1.1.1.tgz.sha256
         chdir: /opt/ansible
-      change_when: False
+      changed_when: False
     
     - name: Extract CNI plugin
       ansible.builtin.unarchive:
@@ -182,12 +182,12 @@
         - kubeadm
         - kubectl
     
-    # Handles for service restarts
-    handlers:
-      - name: apply sysctl
-        ansible.builtin.command:
-          cmd: sysctl --system
-      
-      - name: reload containerd service
-        ansible.builtin.command:
-          cmd: systemctl restart containerd
+  # Handles for service restarts
+  handlers:
+    - name: apply sysctl
+      ansible.builtin.command:
+        cmd: sysctl --system
+    
+    - name: reload containerd service
+      ansible.builtin.command:
+        cmd: systemctl restart containerd

@@ -51,5 +51,9 @@ build {
     provisioner "ansible" {
         playbook_file = "./kube_base.yml"
         user = var.sshcreds
+        ansible_env_vars = [
+            "ANSIBLE_SSH_ARGS='-oHostKeyAlgorithms=+ssh-rsa -oPubkeyAcceptedKeyTypes=ssh-rsa'",
+            "ANSIBLE_HOST_KEY_CHECKING=False"
+        ]
     }
 }
