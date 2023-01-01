@@ -6,7 +6,7 @@
 
 - name: Set hostname for the server(s) properly
   ansible.builtin.hostname:
-    name: "kube-worker-node-{{ node_count }}"
+    name: "kube-worker-node-{{ node_count +1 }}"
   loop: "{{ tf_worker_ips }}"
   loop_control:
     extended: true
@@ -14,7 +14,7 @@
 
 - name: Retrieve join command
   ansible.builtin.set_fact:
-    join_command: "{{ hostvars['{{ tf_master_ips[0] }}']['kubeadm_join_command'] }}"
+    join_command: "{{ hostvars['{{ tf_master_ips }}']['kubeadm_join_command'] }}"
 
 - name: Join node to the cluster
   ansible.builtin.command:

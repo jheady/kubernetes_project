@@ -5,7 +5,7 @@
   
   - name: Set the hostname for the server(s)
     ansible.builtin.hostname:
-      name: "kube-master-node-{{ node_count+1 }}"
+      name: "kube-master-node-{{ node_count + 1 }}"
     loop: "{{ tf_master_ips }}"
     loop_control:
       index_var: node_count
@@ -20,7 +20,7 @@
 
   - name: Initalize the Kubernetes cluster with kubeadm on the primary master node
     ansible.built.command:
-      cmd: "kubeadm init --control-plane-endpoint={{ item.name[0] }}:6443 --pod-network-cide=192.168.122.0/24"
+      cmd: "kubeadm init --control-plane-endpoint={{ item.name }}:6443 --pod-network-cide=192.168.122.0/24"
     when: kubernetes_process_status.changed
     loop: "{{ node_name.results }}"
 

@@ -1,6 +1,6 @@
 resource "libvirt_domain" "master_domain" {
     count = var.master_count
-    name = "${var.master_name}=${count.index + 1}"
+    name = "${var.master_name}-${count.index + 1}"
     memory = var.memory
     vcpu = var.num_cpu
     qemu_agent = true
