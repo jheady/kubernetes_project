@@ -23,5 +23,5 @@ variable "memory" {
 }
 
 variable "base_image" {
-  default = "../build/kube-base.qcow2"
+  default = "/data/kvm/build/kube-base.qcow2"
 }

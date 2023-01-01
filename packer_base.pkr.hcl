@@ -28,7 +28,7 @@ source "qemu" "kube-base" {
     disk_size = "20G"
     format = "qcow2"
     headless = true
-    output_directory = "build"
+    output_directory = "/data/kvm/build"
     memory = "4096"
     ssh_username = var.sshcreds
     ssh_password = var.sshcreds
