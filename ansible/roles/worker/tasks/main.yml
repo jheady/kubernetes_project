@@ -9,7 +9,6 @@
     name: "kube-worker-node-{{ node_count +1 }}"
   loop: "{{ tf_worker_ips }}"
   loop_control:
-    extended: true
     index_var: node_count
 
 - name: Retrieve join command
