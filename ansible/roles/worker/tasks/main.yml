@@ -13,7 +13,8 @@
 
 - name: Retrieve join command
   ansible.builtin.set_fact:
-    join_command: "{{ hostvars['{{ tf_master_ips }}']['kubeadm_join_command'] }}"
+    join_command: "{{ hostvars['DUMMY_HOST']['kubeadm_join_command'] }}"
+  run_once: true
 
 - name: Join node to the cluster
   ansible.builtin.command:
