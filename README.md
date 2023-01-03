@@ -11,12 +11,21 @@ This repo houses the files that are being used to build a kubernetes cluster lab
 * Generate a key for ansible user: `ssh-keygen -t ed25519 -C ansible -f cloudinit/ansible`
 * Replace public key in user-data file
 * Ensure output directory parent exists, or modify `packer_base.pkr.hcl` and `variables.tf` to point to a desired location. Packer build will fail if output directory itself exists, so just make sure it's parent exists.
+* Run `packer init packer_base.pkr.hcl` to install the plugin, followed by `packer build packer_base.pkr.hcl` to get the base image built out.
+* cd into terraform directory and run `terraform init` to download the plugins, then `terraform plan` to see what will be done. Finally a `terraform apply` will spin up 3 servers to operate as a cluster.
 
 # Steps completed
 * The code is written, and confirmed that packer can build the base image. 
 * Confirmed that the ansible provisioner from packer works properly.
 * Terraform can now build the nodes without errors.
+* Second ansible run is complete with exception of joining the worker nodes to the cluster (see issues/todo). The code is complete though.
 
 # TODO
 * Test the second ansible run to provision the individual nodes.
+* Figure out how to assign the correct name to the appropriate server
+* Get DNS working between the servers in the VM network
 * Figure out how to automate the entire process. In hopes of removing the manual execution of terraform and the second ansible run.
+
+# Issues
+* When running the second ansible run, it was discovered that the IPs for the worker nodes are not always captured for the correct server name as assigned by terraform. Instead, the names are randomly assigned. To resolve this will require capturing both the server name and the IP in the variable file.
+* While executing the join_command to attach the nodes to the cluster, they were unable to do so properly because they were unable to route via DNS to the master node.
