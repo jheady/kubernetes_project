@@ -1,14 +1,11 @@
 ---
-  - name: Include the variable from the vars file
+  - name: Include the variables from the vars file
     ansible.builtin.include_vars:
       file: ../../tf_ansible_vars_file.yml
   
-  - name: Set the hostname for the server(s)
+  - name: Set the hostname for the server
     ansible.builtin.hostname:
-      name: "kube-master-node-{{ node_count + 1 }}"
-    loop: "{{ tf_master_ips }}"
-    loop_control:
-      index_var: node_count
+      name: "kube-master-node-1"
     register: node_name
 
   - name: Check if Kubernetes is already running
@@ -16,13 +13,12 @@
       cmd: ps auwx | grpe ^kube
     failed_when: false
     register: kubernetes_process_status
-    change_when: kubernetes_process_status rc != 0
+    changed_when: kubernetes_process_status.rc != 0
 
   - name: Initalize the Kubernetes cluster with kubeadm on the primary master node
-    ansible.built.command:
-      cmd: "kubeadm init --control-plane-endpoint={{ item.name }}:6443 --pod-network-cide=192.168.122.0/24"
+    ansible.builtin.command:
+      cmd: "kubeadm init --control-plane-endpoint={{ node_name.name }}:6443 --pod-network-cidr=192.168.122.0/24"
     when: kubernetes_process_status.changed
-    loop: "{{ node_name.results }}"
 
   - name: Setup kubeconfig for ansible user
     ansible.builtin.command:
@@ -34,7 +30,7 @@
     when: kubernetes_process_status.changed
 
   # Begin calico pod network manifest installation
-  - name: Download calic pod network manifest
+  - name: Download calico pod network manifest
     ansible.builtin.get_url:
       url: https://projectcalico.docs.tigera.io/manifests/calico.yaml
       dest: /opt/ansible/calico.yaml

@@ -12,14 +12,14 @@
     loop: "{{ tf_worker_ips }}"
     changed_when: False
 
-  - name: Add master node(s)
+  - name: Add master node
     ansible.builtin.add_host:
       name: "{{ item }}"
       groups: master_nodes
     loop: "{{ tf_master_ips}}"
-    change_when: false
+    changed_when: false
 
-- name: Setup the master node(s)
+- name: Setup the master node
   remote_user: ansible
   hosts: master_nodes
   become: yes

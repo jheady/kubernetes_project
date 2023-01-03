@@ -189,5 +189,7 @@
         cmd: sysctl --system
     
     - name: reload containerd service
-      ansible.builtin.command:
-        cmd: systemctl restart containerd
+      ansible.builtin.service:
+        name: containerd
+        enabled: yes
+        state: reloaded
