@@ -22,6 +22,12 @@ output "worker_ip_addrs" {
   value = libvirt_domain.worker_domain.*.network_interface.0.addresses.0
 }
 
+locals {
+  worker_map = jsonencode({
+    for name, ip in libvirt_domain.worker_domain.* : name => ip.network_interface.0.addresses.0
+  })
+}
+
 # Export terraform variables values to an Ansible var_file
 resource "local_file" "tf_ansible_vars_file" {
   content = <<-DOC
@@ -30,6 +36,9 @@ resource "local_file" "tf_ansible_vars_file" {
 
     tf_master_ips: [${join(",", libvirt_domain.master_domain.*.network_interface.0.addresses.0)}]
     tf_worker_ips: [${join(",", libvirt_domain.worker_domain.*.network_interface.0.addresses.0)}]
+
+    worker_map: ${local.worker_map}
+
     DOC
   filename = "../ansible/tf_ansible_vars_file.yml"
 }

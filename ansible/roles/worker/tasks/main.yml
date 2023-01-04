@@ -6,10 +6,8 @@
 
 - name: Set hostname for the server(s) properly
   ansible.builtin.hostname:
-    name: "kube-worker-node-{{ node_count +1 }}"
-  loop: "{{ tf_worker_ips }}"
-  loop_control:
-    index_var: node_count
+    name: "kube-worker-node-{{ item|int + 1|int }}"
+  loop: "{{ worker_map.keys() }}"
 
 - name: Retrieve join command
   ansible.builtin.set_fact:
