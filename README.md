@@ -13,19 +13,17 @@ This repo houses the files that are being used to build a kubernetes cluster lab
 * Ensure output directory parent exists, or modify `packer_base.pkr.hcl` and `variables.tf` to point to a desired location. Packer build will fail if output directory itself exists, so just make sure it's parent exists.
 * Run `packer init packer_base.pkr.hcl` to install the plugin, followed by `packer build packer_base.pkr.hcl` to get the base image built out.
 * cd into terraform directory and run `terraform init` to download the plugins, then `terraform plan` to see what will be done. Finally a `terraform apply` will spin up 3 servers to operate as a cluster.
+* cd into the ansible directory and execute the ansible run command: `ANSIBLE_HOST_KEY_CHECKING=False ansible-playbook -i hosts --private-key ../cloudinit/ansible site.yml`
 
 # Steps completed
 * The code is written, and confirmed that packer can build the base image. 
 * Confirmed that the ansible provisioner from packer works properly.
 * Terraform can now build the nodes without errors.
-* Second ansible run is complete with exception of joining the worker nodes to the cluster (see issues/todo). The code is complete though.
+* Second ansible run completes without errors
 
 # TODO
-* Test the second ansible run to provision the individual nodes.
-* Figure out how to assign the correct name to the appropriate server
-* Get DNS working between the servers in the VM network
+* Fix networking between nodes
 * Figure out how to automate the entire process. In hopes of removing the manual execution of terraform and the second ansible run.
 
 # Issues
-* When running the second ansible run, it was discovered that the IPs for the worker nodes are not always captured for the correct server name as assigned by terraform. Instead, the names are randomly assigned. To resolve this will require capturing both the server name and the IP in the variable file.
-* While executing the join_command to attach the nodes to the cluster, they were unable to do so properly because they were unable to route via DNS to the master node.
+* Networking between the nodes in the cluster is not functioning properly. Need to investigate and determine why this is happening.
