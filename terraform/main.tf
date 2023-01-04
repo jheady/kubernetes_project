@@ -24,7 +24,7 @@ output "worker_ip_addrs" {
 
 locals {
   worker_map = jsonencode({
-    for name, ip in libvirt_domain.worker_domain.* : name => ip.network_interface.0.addresses.0
+    for name, ip in libvirt_domain.worker_domain.* : replace(name, ("/\\d/"), "worker-node-${name + 1}") => ip.network_interface.0.addresses.0
   })
 }
 

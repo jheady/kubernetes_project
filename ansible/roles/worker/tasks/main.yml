@@ -6,7 +6,7 @@
 
 - name: Set hostname for the server(s) properly
   ansible.builtin.hostname:
-    name: "kube-worker-node-{{ item|int + 1|int }}"
+    name: "{{ item }}"
   loop: "{{ worker_map.keys() }}"
 
 - name: Retrieve join command
