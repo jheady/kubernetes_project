@@ -1,13 +1,8 @@
 ---
 
-- name: Include the variables from the vars file
-  ansible.builtin.include_vars:
-    file: ../../tf_ansible_vars_file.yml
-
-- name: Set hostname for the server(s) properly
+- name: Set hostname for the server(s)
   ansible.builtin.hostname:
-    name: "{{ item }}"
-  loop: "{{ worker_map.keys() }}"
+    name: "{{ inventory_hostname }}"
 
 - name: Retrieve join command
   ansible.builtin.set_fact:

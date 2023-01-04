@@ -1,8 +1,5 @@
 ---
-  - name: Include the variables from the vars file
-    ansible.builtin.include_vars:
-      file: ../../tf_ansible_vars_file.yml
-  
+
   - name: Set the hostname for the server
     ansible.builtin.hostname:
       name: "kube-master-node-1"
